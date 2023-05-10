@@ -7,11 +7,14 @@ public class Sheep : MonoBehaviour
     // Vars
     public float runSpeed;
     public float hitDestroyDelay;
-    private bool hitByHay; // to control the sheep is already being destroyed
     public float dropDestroyDelay;
+    private bool hitByHay = false; // to control the sheep is already being destroyed
+    private bool dropping = false;
     private Collider sheepCollider;
     private Rigidbody sheepRigidbody;
     private SheepSpawner sheepSpawner;
+    public float heartOffset; 
+    public GameObject heartPrefab;
 
     // Start is called before the first frame update
     void Start()
@@ -29,10 +32,23 @@ public class Sheep : MonoBehaviour
     // Other methods
     private void destroySheep()
     {
-        // Setup
-        sheepSpawner.RemoveSheepFromList(gameObject);
+        // Set hit flag to true
         hitByHay = true;
-        runSpeed = 0;
+
+        // Update the saved sheep number
+        GameStateManager.Instance.SaveSheep();
+
+        // Remove instance from list
+        sheepSpawner.RemoveSheepFromList(gameObject);
+
+        // Play sheep hit sound
+        SoundManager.Instance.PlaySheepHitClip();
+
+        // Sheep animation
+        sheepAnimation();
+
+        // Heart animation
+        heartAnimation();
 
         // Destroy
         Destroy(gameObject, hitDestroyDelay);
@@ -40,8 +56,19 @@ public class Sheep : MonoBehaviour
 
     private void dropSheep()
     {
-        // Setup
+        // Set dropping state to true
+        dropping = true;
+
+        // Update the dropped sheep number
+        GameStateManager.Instance.DropSheep();
+
+        // Remove instance from list
         sheepSpawner.RemoveSheepFromList(gameObject);
+
+        // Play sheep drop sound
+        SoundManager.Instance.PlaySheepDroppedClip();
+
+        // Drop animation
         sheepRigidbody.isKinematic = false;
         sheepCollider.isTrigger = false;
 
@@ -62,7 +89,7 @@ public class Sheep : MonoBehaviour
         else if (other.CompareTag("DropSheep"))
         {
             // Drop and destroy sheep (with delay)
-            dropSheep();
+            if(!dropping) dropSheep();
         }
 
     }
@@ -70,5 +97,22 @@ public class Sheep : MonoBehaviour
     public void SetSpawner(SheepSpawner spawner)
     {
         sheepSpawner = spawner;
+    }
+
+    private void heartAnimation()
+    {
+        // Create instance
+        Instantiate(heartPrefab, transform.position + new Vector3(0, heartOffset, 0), Quaternion.identity);
+    }
+
+    private void sheepAnimation()
+    {
+        // Stop the sheep
+        runSpeed = 0;
+
+        // Tween scale it 
+        TweenScale tweenScale = gameObject.AddComponent<TweenScale>();
+        tweenScale.targetScale = 0;
+        tweenScale.timeToReachTarget = hitDestroyDelay;
     }
 }

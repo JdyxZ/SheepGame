@@ -57,4 +57,16 @@ public class SheepSpawner : MonoBehaviour
     {
         sheepList.Remove(sheep);
     }
+
+    public void DestroyFlock()
+    {
+        // Destroy instances
+        foreach (GameObject sheep in sheepList) 
+        {
+            Destroy(sheep);
+        }
+
+        // Clear list
+        sheepList.Clear();
+    }
 }
